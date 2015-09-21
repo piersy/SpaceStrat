@@ -48,9 +48,6 @@ public class ShipController : MonoBehaviour
     Vector3[] newVertices;
     void LateUpdate()
     {
-//use method here to draw this stuff it will save me having to hold both the current and next segment in memory i hope
-        //http://gamedev.stackexchange.com/questions/96964/how-to-correctly-draw-a-line-in-unity
-        //Front of the ship
         Vector3 front = frontOfShip();
         //We draw our control mesh segments with a distance of 1 between them
         //So we truncate the distance to be an inteer value to simplify segment placement
@@ -66,7 +63,7 @@ public class ShipController : MonoBehaviour
         //a triangle is made up of 3 indexes 
         int[] newTriangles = new int[intDistance * 4 * 2 * 3];
         //we precalculate the first set of verts here so that we can allways set triangles in the loop
-        Vector3 segPos = front + (intDistance * direction);
+        Vector3 segPos = front;
         newVertices[0] = segPos + controlCube.transform.up + controlCube.transform.right;
         newVertices[1] = segPos - controlCube.transform.up + controlCube.transform.right;
         newVertices[2] = segPos - controlCube.transform.up - controlCube.transform.right;
@@ -75,13 +72,24 @@ public class ShipController : MonoBehaviour
         int prevOffset;
         //we want four lines for each segment and then four lines to connect each segment to the next
         linesList = new List<int>();
+        linesList.Add(0);
+        linesList.Add(1);
+
+        linesList.Add(1);
+        linesList.Add(2);
+            
+        linesList.Add(2);
+        linesList.Add(3);
+            
+        linesList.Add(3);
+        linesList.Add(0);
         //Attempting to create a mesh object, to replace the existing object indicator
         for (int i = 1; i < intDistance; i++)
         {
             prevOffset = vOffset;
             vOffset = i * 4;
             
-            segPos = front + (i* direction);
+            segPos = front + (i * direction);
             newVertices[vOffset + 0] = segPos + controlCube.transform.up + controlCube.transform.right;
             newVertices[vOffset + 1] = segPos - controlCube.transform.up + controlCube.transform.right;
             newVertices[vOffset + 2] = segPos - controlCube.transform.up - controlCube.transform.right;
