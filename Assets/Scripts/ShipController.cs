@@ -55,16 +55,16 @@ public class ShipController : MonoBehaviour
         //We draw our control mesh segments with a distance of 1 between them
         //So we truncate the distance to be an integer value to simplify segment placement
         int intDistance = (int)Vector3.Distance(controlCube.transform.position, front);
-        //The bezier controll point straight out in front of the ship
-        Vector3 curveControllPoint = new Vector3(front.x, front.y + controlCube.transform.position.y, front.z);
 
-        go.transform.position = curveControllPoint;
-        go.GetComponent<MeshRenderer>().material.color = Color.white;
         //the direction from the ship to the control cube
         Vector3 direction = (controlCube.transform.position - front).normalized;
         Vector3 endPoint = front + ((intDistance-1) * direction);
+        //The bezier controll point straight out in front of the ship
+        Vector3 curveControllPoint = new Vector3(front.x, endPoint.y, front.z);
+        go.transform.position = curveControllPoint;
+        go.GetComponent<MeshRenderer>().material.color = Color.white;
         go2.transform.position = endPoint;
-        go2.GetComponent<MeshRenderer>().material.color = Color.white;
+        go2.GetComponent<MeshRenderer>().material.color = Color.black;
         //set the control cube to follow this direction
         controlCube.transform.rotation = Quaternion.LookRotation(direction);
         //control mesh verticies one segment per  unit distance
@@ -79,7 +79,6 @@ public class ShipController : MonoBehaviour
         {
             prevOffset = vOffset;
             vOffset = i * 4;
-            //segmentPosition = front + (i * direction);
          
             float t = (float)i/(float)intDistance;
             Vector3 bezierPoint = (Mathf.Pow(1f-t,2) * front) + (2*(1f-t)*t*curveControllPoint) + (Mathf.Pow(t,2) * endPoint); 
