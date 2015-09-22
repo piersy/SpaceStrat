@@ -8,6 +8,7 @@ public class ShipController : MonoBehaviour
     List<int> linesList;
     //Cube that sits in front of the ship and can be dragged by the player in order to control the ship
     private GameObject controlCube;
+    private GameObject drawingControl;
     //Game object that is used to help construct the control mesh
     private GameObject controlMeshGameObject;
     Vector3[] newVertices;
@@ -33,12 +34,12 @@ public class ShipController : MonoBehaviour
     private Material newMaterial()
     {
         Material lineMaterial = new Material("Shader \"Lines/Colored Blended\" {" +
-                                       "SubShader { Pass { " +
-                                       "    Blend SrcAlpha OneMinusSrcAlpha " +
-                                       "    ZWrite Off Cull Off Fog { Mode Off } " +
-                                       "    BindChannels {" +
-                                       "      Bind \"vertex\", vertex Bind \"color\", color }" +
-                                       "} } }");
+                                    "SubShader { Pass { " +
+                                    "    Blend SrcAlpha OneMinusSrcAlpha " +
+                                    "    ZWrite Off Cull Off Fog { Mode Off } " +
+                                    "    BindChannels {" +
+                                    "      Bind \"vertex\", vertex Bind \"color\", color }" +
+                                    "} } }");
         lineMaterial.hideFlags = HideFlags.HideAndDontSave;
         lineMaterial.shader.hideFlags = HideFlags.HideAndDontSave;
         return lineMaterial;
@@ -58,9 +59,9 @@ public class ShipController : MonoBehaviour
 
         //the direction from the ship to the control cube
         Vector3 direction = (controlCube.transform.position - front).normalized;
-        Vector3 endPoint = front + ((intDistance-1) * direction);
+        Vector3 endPoint = front + ((intDistance - 1) * direction);
         //The bezier controll point straight out in front of the ship
-        Vector3 curveControllPoint = new Vector3(front.x, endPoint.y, front.z);
+        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y/2) + Mathf.Sqrt(Mathf.Pow(endPoint.x-front.x,2) + Mathf.Pow(endPoint.z-front.z,2)), front.z);
         go.transform.position = curveControllPoint;
         go.GetComponent<MeshRenderer>().material.color = Color.white;
         go2.transform.position = endPoint;
@@ -80,14 +81,19 @@ public class ShipController : MonoBehaviour
             prevOffset = vOffset;
             vOffset = i * 4;
          
-            float t = (float)i/(float)intDistance;
-            Vector3 bezierPoint = (Mathf.Pow(1f-t,2) * front) + (2*(1f-t)*t*curveControllPoint) + (Mathf.Pow(t,2) * endPoint); 
-            Vector3 bezierSlope  = 2*(1f-t)*(curveControllPoint - front) + 2*t*(endPoint -curveControllPoint);
+            float t = (float)i / (float)intDistance;
+            if (t == 0)
+            {
+                t += 0.01f;
+            }
+            Vector3 bezierPoint = (Mathf.Pow(1f - t, 2) * front) + (2 * (1f - t) * t * curveControllPoint) + (Mathf.Pow(t, 2) * endPoint); 
+            Vector3 bezierSlope = 2 * (1f - t) * (curveControllPoint - front) + 2 * t * (endPoint - curveControllPoint);
+            controlMeshGameObject.transform.rotation = Quaternion.LookRotation(bezierSlope);
 
-            newVertices[vOffset + 0] = bezierPoint + controlCube.transform.up + controlCube.transform.right;
-            newVertices[vOffset + 1] = bezierPoint - controlCube.transform.up + controlCube.transform.right;
-            newVertices[vOffset + 2] = bezierPoint - controlCube.transform.up - controlCube.transform.right;
-            newVertices[vOffset + 3] = bezierPoint + controlCube.transform.up - controlCube.transform.right;
+            newVertices[vOffset + 0] = bezierPoint + controlMeshGameObject.transform.up + controlMeshGameObject.transform.right;
+            newVertices[vOffset + 1] = bezierPoint - controlMeshGameObject.transform.up + controlMeshGameObject.transform.right;
+            newVertices[vOffset + 2] = bezierPoint - controlMeshGameObject.transform.up - controlMeshGameObject.transform.right;
+            newVertices[vOffset + 3] = bezierPoint + controlMeshGameObject.transform.up - controlMeshGameObject.transform.right;
 
             //Add lines connecting each segment
             linesList.Add(vOffset + 0);
