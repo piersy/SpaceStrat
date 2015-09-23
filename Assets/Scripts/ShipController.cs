@@ -12,18 +12,22 @@ public class ShipController : MonoBehaviour
     //Game object that is used to help construct the control mesh
     private GameObject controlMeshGameObject;
     Vector3[] newVertices;
+    float[] distances;
     GlLineRenderer lineRenderer;
-    GameObject go;
-    GameObject go2;
+    GameObject curveControl;
+    GameObject endCube;
     void Start()
     {
 
-        go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        go2 = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        Vector3 front = frontOfShip();
+        curveControl = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        curveControl.GetComponent<MeshRenderer>().material.color = Color.white;
+
+        endCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        endCube.GetComponent<MeshRenderer>().material.color = Color.black;
+
         controlCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         //ControlCube has its postion set to 10 units in front of the ship
-        controlCube.transform.position = front + (transform.up * 10);
+        controlCube.transform.position = frontOfShip() + (transform.forward * 10);
         controlCube.GetComponent<MeshRenderer>().material.color = Color.red;
         controlCube.AddComponent<Drag>();
 
@@ -68,11 +72,10 @@ public class ShipController : MonoBehaviour
          but when the control cube is directly in front of the ship the controll point is halfway between
          it and the ship, this ensures a smooth curve without kinks
          */
-        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y/2) + Mathf.Sqrt(Mathf.Pow(endPoint.x-front.x,2) + Mathf.Pow(endPoint.z-front.z,2))/2, front.z);
-        go.transform.position = curveControllPoint;
-        go.GetComponent<MeshRenderer>().material.color = Color.white;
-        go2.transform.position = endPoint;
-        go2.GetComponent<MeshRenderer>().material.color = Color.black;
+        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y / 2) + Mathf.Sqrt(Mathf.Pow(endPoint.x - front.x, 2) + Mathf.Pow(endPoint.z - front.z, 2)) / 2, front.z);
+
+        curveControl.transform.position = curveControllPoint;
+        endCube.transform.position = endPoint;
         //set the control cube to follow this direction
         controlCube.transform.rotation = Quaternion.LookRotation(direction);
         //control mesh verticies one segment per  unit distance
@@ -82,6 +85,9 @@ public class ShipController : MonoBehaviour
         int prevOffset;
         linesList = new List<int>(4 * intDistance * 2 + 4 * (intDistance - 1) * 2);
         Vector3 segmentPosition = front;
+        distances = new float[4 * intDistance];
+        float maxDistance = 0;
+        float minDistance = Mathf.Infinity;
         //Attempting to create a mesh object, to replace the existing object indicator
         for (int i = 0; i < intDistance; i++)
         {
@@ -102,13 +108,26 @@ public class ShipController : MonoBehaviour
             newVertices[vOffset + 2] = bezierPoint - controlMeshGameObject.transform.up - controlMeshGameObject.transform.right;
             newVertices[vOffset + 3] = bezierPoint + controlMeshGameObject.transform.up - controlMeshGameObject.transform.right;
 
+            for (int j = 0; j < 4; j++)
+            {
+                Vector3 heading = newVertices[vOffset + j] - Camera.main.gameObject.transform.position;
+                float distance = Vector3.Dot(heading, Camera.main.gameObject.transform.forward);
+                if (distance < minDistance)
+                {
+                    minDistance = distance;
+                }
+                else if (distance > maxDistance)
+                {
+                    maxDistance = distance;
+                }
+                distances[vOffset + j] = distance;
+            }
             //Add lines connecting each segment
             linesList.Add(vOffset + 0);
             linesList.Add(vOffset + 1);
 
             linesList.Add(vOffset + 1);
-            linesList.Add(vOffset + 2);
-            
+            linesList.Add(vOffset + 2); 
             linesList.Add(vOffset + 2);
             linesList.Add(vOffset + 3);
             
@@ -129,12 +148,18 @@ public class ShipController : MonoBehaviour
             linesList.Add(vOffset + 3);
 
         }
-		
+        float delta = maxDistance - minDistance;
+        for (int i = 0; i < distances.Length; i++)
+        {
+            distances[i] = (distances[i] - minDistance) / delta;
+        }
+
+
     }
 
     void  OnRenderObject()
     {    
-        lineRenderer.renderLines(newVertices, linesList.ToArray());
+        lineRenderer.renderLines(newVertices, linesList.ToArray(), distances);
     }
 
 

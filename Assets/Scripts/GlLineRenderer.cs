@@ -11,15 +11,15 @@ public class GlLineRenderer
         this.material = material;
     }
     
-    public void renderLines(Vector3[] verts, int[] indexes)
+    public void renderLines(Vector3[] verts, int[] indexes, float[] distances)
     {
         material.SetPass(0);
         GL.PushMatrix();
         //GL.MultMatrix(controlMeshGameObject.transform.localToWorldMatrix);
         GL.Begin(GL.LINES);
-        GL.Color(new Color(1, 1, 1, 0.1f));
-        for (int i = 0; i <indexes.Length; i++)
+        for (int i = 0; i < indexes.Length; i++)
         {
+            GL.Color(new Color(1, 1, 1, 1f-(distances[indexes[i]])));
             GL.Vertex(verts[indexes[i]]);
         }
         GL.End();
