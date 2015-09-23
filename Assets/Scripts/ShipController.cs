@@ -60,8 +60,15 @@ public class ShipController : MonoBehaviour
         //the direction from the ship to the control cube
         Vector3 direction = (controlCube.transform.position - front).normalized;
         Vector3 endPoint = front + ((intDistance - 1) * direction);
-        //The bezier controll point straight out in front of the ship
-        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y/2) + Mathf.Sqrt(Mathf.Pow(endPoint.x-front.x,2) + Mathf.Pow(endPoint.z-front.z,2)), front.z);
+        /*
+         The bezier controll points straight out in front of the ship half the distance in that
+         direction to the end point + half the lateral distance from the forward line of the ship
+         this ensures that when the controll cube is at 45 degree angle to the front direction of the
+         ship the control point is positioned such that it has an angle of 90 degrees bewtween start and end points
+         but when the control cube is directly in front of the ship the controll point is halfway between
+         it and the ship, this ensures a smooth curve without kinks
+         */
+        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y/2) + Mathf.Sqrt(Mathf.Pow(endPoint.x-front.x,2) + Mathf.Pow(endPoint.z-front.z,2))/2, front.z);
         go.transform.position = curveControllPoint;
         go.GetComponent<MeshRenderer>().material.color = Color.white;
         go2.transform.position = endPoint;
