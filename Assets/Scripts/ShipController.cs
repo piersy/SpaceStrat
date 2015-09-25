@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
-using System.Collections;
+
+//using System.Collections;
 using System.Collections.Generic;
 
 public class ShipController : MonoBehaviour
@@ -8,7 +9,6 @@ public class ShipController : MonoBehaviour
     List<int> linesList;
     //Cube that sits in front of the ship and can be dragged by the player in order to control the ship
     private GameObject controlCube;
-    private GameObject drawingControl;
     //Game object that is used to help construct the control mesh
     private GameObject controlMeshGameObject;
     Vector3[] newVertices;
@@ -16,9 +16,15 @@ public class ShipController : MonoBehaviour
     GlLineRenderer lineRenderer;
     GameObject curveControl;
     GameObject endCube;
+    Bounds bounds;
+    Rigidbody rb;
+    Vector3 heading;
+    bool paused=true;
     void Start()
     {
-
+        heading = new Vector3(0f,0f,0f);
+        rb = GetComponent<Rigidbody>();
+        bounds = GetComponent<Renderer>().bounds;
         curveControl = GameObject.CreatePrimitive(PrimitiveType.Cube);
         curveControl.GetComponent<MeshRenderer>().material.color = Color.white;
 
@@ -34,7 +40,6 @@ public class ShipController : MonoBehaviour
         controlMeshGameObject = new GameObject();
         lineRenderer = new GlLineRenderer(newMaterial());
     }
-
     private Material newMaterial()
     {
         Material lineMaterial = new Material("Shader \"Lines/Colored Blended\" {" +
@@ -48,15 +53,39 @@ public class ShipController : MonoBehaviour
         lineMaterial.shader.hideFlags = HideFlags.HideAndDontSave;
         return lineMaterial;
     }
+
     //Front of ship, the epoint from which the controll mesh starts
     Vector3 frontOfShip()
     {
-        return new Vector3(transform.position.x, transform.position.y + GetComponent<Renderer>().bounds.extents.y, transform.position.z);
+        return transform.position + (transform.forward * bounds.extents.y);
     }
+
+    void Update(){
+    
+
+
+    }
+    void FixedUpdate()
+    {
+        if(paused) return;
+        rb.AddForce(transform.forward*heading.y , ForceMode.Force);
+       //rb.AddForceAtPosition(transform.right * heading.x/50f, frontOfShip(),ForceMode.Force);
+       //rb.AddForceAtPosition(transform.right *heading.z, frontOfShip(),ForceMode.Force);
+       rb.AddForceAtPosition(transform.up *heading.x, frontOfShip(),ForceMode.Force);
+    }
+
 
     void LateUpdate()
     {
+        if(Input.GetKeyDown(KeyCode.Space)) paused = !paused;
+        if(!paused) {
+            Time.timeScale = 1f; 
+            return; 
+        }else{
+            Time.timeScale = 0f; 
+        }
         Vector3 front = frontOfShip();
+        heading = controlCube.transform.position - front;
         //We draw our control mesh segments with a distance of 1 between them
         //So we truncate the distance to be an integer value to simplify segment placement
         int intDistance = (int)Vector3.Distance(controlCube.transform.position, front);
@@ -80,10 +109,10 @@ public class ShipController : MonoBehaviour
         controlCube.transform.rotation = Quaternion.LookRotation(direction);
         //control mesh verticies one segment per  unit distance
         newVertices = new Vector3[4 * intDistance];
-        Vector2[] newUV;
         int vOffset = 0;
         int prevOffset;
-        linesList = new List<int>(4 * intDistance * 2 + 4 * (intDistance - 1) * 2);
+        int linesSize = 4 * intDistance * 2 + 4 * (intDistance - 1) * 2;
+        linesList = new List<int>(linesSize);
         Vector3 segmentPosition = front;
         distances = new float[4 * intDistance];
         float maxDistance = 0;
@@ -110,8 +139,8 @@ public class ShipController : MonoBehaviour
 
             for (int j = 0; j < 4; j++)
             {
-                Vector3 heading = newVertices[vOffset + j] - Camera.main.gameObject.transform.position;
-                float distance = Vector3.Dot(heading, Camera.main.gameObject.transform.forward);
+                Vector3 currHeading = newVertices[vOffset + j] - Camera.main.gameObject.transform.position;
+                float distance = Vector3.Dot(currHeading, Camera.main.gameObject.transform.forward);
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -159,6 +188,7 @@ public class ShipController : MonoBehaviour
 
     void  OnRenderObject()
     {    
+        if (!paused) return;
         lineRenderer.renderLines(newVertices, linesList.ToArray(), distances);
     }
 
