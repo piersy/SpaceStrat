@@ -2,7 +2,6 @@
 
 //using System.Collections;
 using System.Collections.Generic;
-
 public class BezierControlMesh
 {
     //The list that holds all the lines
@@ -12,7 +11,7 @@ public class BezierControlMesh
     //Game object that is used to help construct the control mesh
     private GameObject controlMeshGameObject;
     //The point form which the mesh starts, this shoudl be in local space of the transform
-    private Vector3 startPoint;
+    private Vector3 startPointLocal;
     private Vector3[] newVertices;
     private float[] distances;
     private GlLineRenderer lineRenderer;
@@ -20,16 +19,18 @@ public class BezierControlMesh
     private GameObject endCube;
     private Bounds bounds;
     private Rigidbody rb;
-    private Vector3 heading;
+    private Vector3 headingLocal;
+    delegate void PerformCalculation(int x, int y);
     //The transform of the gameobject that this control mesh is assigned to
     private Transform transform;
 
-    public BezierControlMesh(Transform transform, Vector3 startPoint)
+    public BezierControlMesh(Transform transform, Vector3 startPointLocal)
     {
         this.transform = transform;
-        this.startPoint = startPoint;
+        this.startPointLocal = startPointLocal;
 
-        heading = new Vector3(0f, 0f, 0f);
+        //Set the initial heading it should be out in front of the object
+        headingLocal = transform.up * 10;
         curveControl = GameObject.CreatePrimitive(PrimitiveType.Cube);
         curveControl.GetComponent<MeshRenderer>().material.color = Color.white;
 
@@ -37,10 +38,9 @@ public class BezierControlMesh
         endCube.GetComponent<MeshRenderer>().material.color = Color.black;
 
         controlCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        //ControlCube has its postion set to 10 units in front of the ship
-        controlCube.transform.position = startPoint + (transform.forward * 10);
         controlCube.GetComponent<MeshRenderer>().material.color = Color.red;
         controlCube.AddComponent<Drag>();
+        controlCube.transform.position = transform.TransformPoint(startPointLocal + headingLocal);
 
         controlMeshGameObject = new GameObject();
         lineRenderer = new GlLineRenderer(newMaterial());
@@ -62,20 +62,38 @@ public class BezierControlMesh
 
     public Vector3 GetHeading()
     {
-        return controlCube.transform.position - startPoint;
+        return headingLocal;
+    }
+
+    public void Deactivate()
+    {
+        controlCube.active = false;
+        curveControl.active = false;
+        endCube.active = false;
+        controlMeshGameObject.active = false;
+    }
+
+    public void Activate()
+    {
+        controlCube.transform.position = transform.TransformPoint(startPointLocal + headingLocal);
+        controlCube.active = true;
+        curveControl.active = true;
+        endCube.active = true;
+        controlMeshGameObject.active = true;
     }
 
     public void BuildControlMesh()
     {
-        Vector3 front = transform.position + startPoint;
 
+        headingLocal = transform.InverseTransformPoint(controlCube.transform.position) - startPointLocal;
+        Vector3 startPoint = transform.TransformPoint(startPointLocal);
         //We draw our control mesh segments with a distance of 1 between them
         //So we truncate the distance to be an integer value to simplify segment placement
-        int intDistance = (int)Vector3.Distance(controlCube.transform.position, front);
+        int intDistance = (int)Vector3.Distance(controlCube.transform.position, startPoint);
 
         //the direction from the ship to the control cube
-        Vector3 direction = (controlCube.transform.position - front).normalized;
-        Vector3 endPoint = front + ((intDistance - 1) * direction);
+        Vector3 direction = transform.TransformDirection(headingLocal).normalized;
+        Vector3 endPoint = startPoint + ((intDistance - 1) * direction);
         /*
          The bezier controll points straight out in front of the ship half the distance in that
          direction to the end point + half the lateral distance from the forward line of the ship to the end point
@@ -84,7 +102,7 @@ public class BezierControlMesh
          but when the control cube is directly in front of the ship the controll point is halfway between
          it and the ship, this ensures a smooth curve without kinks
          */
-        Vector3 curveControllPoint = new Vector3(front.x, (endPoint.y / 2) + Mathf.Sqrt(Mathf.Pow(endPoint.x - front.x, 2) + Mathf.Pow(endPoint.z - front.z, 2)) / 2, front.z);
+        Vector3 curveControllPoint = new Vector3(startPoint.x, (endPoint.y / 2) + Mathf.Sqrt(Mathf.Pow(endPoint.x - startPoint.x, 2) + Mathf.Pow(endPoint.z - startPoint.z, 2)) / 2, startPoint.z);
 
         curveControl.transform.position = curveControllPoint;
         endCube.transform.position = endPoint;
@@ -96,7 +114,7 @@ public class BezierControlMesh
         int prevOffset;
         int linesSize = 4 * intDistance * 2 + 4 * (intDistance - 1) * 2;
         linesList = new List<int>(linesSize);
-        Vector3 segmentPosition = front;
+        Vector3 segmentPosition = startPoint;
         distances = new float[4 * intDistance];
         float maxDistance = 0;
         float minDistance = Mathf.Infinity;
@@ -111,8 +129,8 @@ public class BezierControlMesh
             {
                 t += 0.01f;
             }
-            Vector3 bezierPoint = (Mathf.Pow(1f - t, 2) * front) + (2 * (1f - t) * t * curveControllPoint) + (Mathf.Pow(t, 2) * endPoint); 
-            Vector3 bezierSlope = 2 * (1f - t) * (curveControllPoint - front) + 2 * t * (endPoint - curveControllPoint);
+            Vector3 bezierPoint = (Mathf.Pow(1f - t, 2) * startPoint) + (2 * (1f - t) * t * curveControllPoint) + (Mathf.Pow(t, 2) * endPoint); 
+            Vector3 bezierSlope = 2 * (1f - t) * (curveControllPoint - startPoint) + 2 * t * (endPoint - curveControllPoint);
             controlMeshGameObject.transform.rotation = Quaternion.LookRotation(bezierSlope);
 
             newVertices[vOffset + 0] = bezierPoint + controlMeshGameObject.transform.up + controlMeshGameObject.transform.right;
