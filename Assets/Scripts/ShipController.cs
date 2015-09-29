@@ -9,19 +9,12 @@ public class ShipController : MonoBehaviour
     bool paused = true;
     //Does the hard work of displaying the bezier wireframe controll
     BezierControlMesh bcm;
-
+    Vector3 frontOfShip;
     void Start()
     {
-        bcm = new BezierControlMesh(transform,frontOfShip());
         rb = GetComponent<Rigidbody>();
-    }
-
-
-    //Front of ship in local space
-    Vector3 frontOfShip()
-    {
-        Bounds bounds = GetComponent<Renderer>().bounds;
-        return transform.up *  bounds.extents.y;
+        frontOfShip = GetComponent<Renderer>().bounds.extents.y * transform.up;
+        bcm = new BezierControlMesh(transform, frontOfShip);
     }
 
     void FixedUpdate()
@@ -29,9 +22,14 @@ public class ShipController : MonoBehaviour
         if (paused)
             return;
         Vector3 heading = bcm.GetHeading();
-        Debug.Log( heading );
+        Debug.Log(heading);
         //rb.AddForce(transform.up * heading.y, ForceMode.Force);
-        rb.AddForceAtPosition(transform.right * heading.x, transform.TransformPoint(frontOfShip()),ForceMode.Force);
+        //This force here is not relative so we need to convert it to world space
+        rb.AddForceAtPosition(transform.right * heading.x, transform.TransformPoint(frontOfShip), ForceMode.Force);
+        //rb.AddForceAtPosition(transform.TransformPoint(transform.right) * heading.x, frontOfShip(),ForceMode.Force);
+        GameObject endCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        endCube.GetComponent<MeshRenderer>().material.color = Color.black;
+        endCube.transform.position = frontOfShip;
         //rb.AddForceAtPosition(transform.forward *heading.z, frontOfShip(),ForceMode.Force);
         // rb.AddForceAtPosition(transform.right * heading.x / 20, frontOfShip(), ForceMode.Force);
     }
