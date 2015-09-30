@@ -21,15 +21,19 @@ public class ShipController : MonoBehaviour
     {
         if (paused)
             return;
-        Vector3 heading = bcm.GetHeading();
+        Vector3 heading = bcm.GetLocalHeading();
         Debug.Log(heading);
         //rb.AddForce(transform.up * heading.y, ForceMode.Force);
         //This force here is not relative so we need to convert it to world space
-        rb.AddForceAtPosition(transform.right * heading.x, transform.TransformPoint(frontOfShip), ForceMode.Force);
+        Vector3 frontOfShipWorld =transform.TransformPoint(frontOfShip); 
+        rb.AddForceAtPosition(transform.right * heading.x, frontOfShipWorld, ForceMode.Force);
+        rb.AddForceAtPosition(transform.forward * heading.z, frontOfShipWorld, ForceMode.Force);
+        //rb.AddForceAtPosition(transform.forward * heading.z, frontOfShipWorld, ForceMode.Force);
         //rb.AddForceAtPosition(transform.TransformPoint(transform.right) * heading.x, frontOfShip(),ForceMode.Force);
         GameObject endCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         endCube.GetComponent<MeshRenderer>().material.color = Color.black;
-        endCube.transform.position = frontOfShip;
+        endCube.transform.position = transform.TransformPoint(heading);
+        endCube.gameObject.GetComponent<Collider>().enabled = false;
         //rb.AddForceAtPosition(transform.forward *heading.z, frontOfShip(),ForceMode.Force);
         // rb.AddForceAtPosition(transform.right * heading.x / 20, frontOfShip(), ForceMode.Force);
     }

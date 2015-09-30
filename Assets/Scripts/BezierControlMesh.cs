@@ -19,7 +19,9 @@ public class BezierControlMesh
     private GameObject endCube;
     private Bounds bounds;
     private Rigidbody rb;
-    private Vector3 headingLocal;
+    private Vector3 heading;
+    //Required to pass back to the ship controller so that it can be manipulated according to the transform
+    private Vector3 localHeading;
     delegate void PerformCalculation(int x, int y);
     //The transform of the gameobject that this control mesh is assigned to
     private Transform transform;
@@ -30,7 +32,7 @@ public class BezierControlMesh
         this.startPointLocal = startPointLocal;
 
         //Set the initial heading it should be out in front of the object
-        headingLocal = transform.up * 10;
+        heading = transform.up * 10;
         curveControl = GameObject.CreatePrimitive(PrimitiveType.Cube);
         curveControl.GetComponent<MeshRenderer>().material.color = Color.white;
 
@@ -40,7 +42,8 @@ public class BezierControlMesh
         controlCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         controlCube.GetComponent<MeshRenderer>().material.color = Color.red;
         controlCube.AddComponent<Drag>();
-        controlCube.transform.position = transform.TransformPoint(startPointLocal + headingLocal);
+        controlCube.transform.position = transform.TransformPoint(startPointLocal) + heading;
+        localHeading = transform.InverseTransformPoint(heading);
 
         controlMeshGameObject = new GameObject();
         lineRenderer = new GlLineRenderer(newMaterial());
@@ -60,9 +63,9 @@ public class BezierControlMesh
         return lineMaterial;
     }
 
-    public Vector3 GetHeading()
+    public Vector3 GetLocalHeading()
     {
-        return headingLocal;
+        return localHeading;
     }
 
     public void Deactivate()
@@ -75,7 +78,7 @@ public class BezierControlMesh
 
     public void Activate()
     {
-        controlCube.transform.position = transform.TransformPoint(startPointLocal + headingLocal);
+        controlCube.transform.position = transform.TransformPoint(startPointLocal)+ heading;
         controlCube.active = true;
         curveControl.active = true;
         endCube.active = true;
@@ -85,14 +88,15 @@ public class BezierControlMesh
     public void BuildControlMesh()
     {
 
-        headingLocal = transform.InverseTransformPoint(controlCube.transform.position) - startPointLocal;
+        heading = controlCube.transform.position - transform.TransformPoint(startPointLocal);
+        localHeading = transform.InverseTransformDirection(heading);
         Vector3 startPoint = transform.TransformPoint(startPointLocal);
         //We draw our control mesh segments with a distance of 1 between them
         //So we truncate the distance to be an integer value to simplify segment placement
         int intDistance = (int)Vector3.Distance(controlCube.transform.position, startPoint);
 
         //the direction from the ship to the control cube
-        Vector3 direction = transform.TransformDirection(headingLocal).normalized;
+        Vector3 direction = heading.normalized;
         Vector3 endPoint = startPoint + ((intDistance - 1) * direction);
         /*
          The bezier controll points straight out in front of the ship half the distance in that
