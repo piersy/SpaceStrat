@@ -13,7 +13,8 @@ public class ShipController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        frontOfShip = GetComponent<Renderer>().bounds.extents.y * transform.up;
+        Debug.Log(GetComponent<Renderer>().bounds.extents.y);
+        frontOfShip = GetComponent<Renderer>().bounds.extents.y * Vector3.up;
         bcm = new BezierControlMesh(transform, frontOfShip);
     }
 
@@ -28,6 +29,7 @@ public class ShipController : MonoBehaviour
         Vector3 frontOfShipWorld =transform.TransformPoint(frontOfShip); 
         rb.AddForceAtPosition(transform.right * heading.x, frontOfShipWorld, ForceMode.Force);
         rb.AddForceAtPosition(transform.forward * heading.z, frontOfShipWorld, ForceMode.Force);
+        rb.AddForce(transform.up * heading.y, ForceMode.Force);
         //rb.AddForceAtPosition(transform.forward * heading.z, frontOfShipWorld, ForceMode.Force);
         //rb.AddForceAtPosition(transform.TransformPoint(transform.right) * heading.x, frontOfShip(),ForceMode.Force);
         GameObject endCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
