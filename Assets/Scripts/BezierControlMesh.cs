@@ -110,7 +110,8 @@ public class BezierControlMesh : MonoBehaviour
          it and the ship, this ensures a smooth curve without kinks
          */
         //Vector3 curveControllPoint = new Vector3(startPointLocal.x, (endPoint.y / 2) + Mathf.Sqrt(Mathf.Pow(endPoint.x - startPoint.x, 2) + Mathf.Pow(endPoint.z - startPoint.z, 2)) / 2, startPoint.z);
-        Vector3 curveControllPointLocal = startPointLocal + (endPointLocal - startPointLocal) / 2f;
+        Vector3 curveControllPointLocal = new Vector3(startPointLocal.x, (endPointLocal.y / 2) + Mathf.Sqrt(Mathf.Pow(endPointLocal.x - startPointLocal.x, 2) + Mathf.Pow(endPointLocal.z - startPointLocal.z, 2)) / 2, startPointLocal.z);
+        //Vector3 curveControllPointLocal = startPointLocal + (endPointLocal - startPointLocal) / 2f;
 
         Vector3 endPoint = transform.TransformPoint(endPointLocal);
         Vector3 curveControllPoint = transform.TransformPoint(curveControllPointLocal);
@@ -143,7 +144,7 @@ public class BezierControlMesh : MonoBehaviour
             }
             Vector3 bezierPoint = (Mathf.Pow(1f - t, 2) * startPoint) + (2 * (1f - t) * t * curveControllPoint) + (Mathf.Pow(t, 2) * endPoint); 
             Vector3 bezierSlope = 2 * (1f - t) * (curveControllPoint - startPoint) + 2 * t * (endPoint - curveControllPoint);
-            controlMeshGameObject.transform.rotation = Quaternion.LookRotation(bezierSlope);
+            controlMeshGameObject.transform.rotation = Quaternion.LookRotation(bezierSlope, transform.up);
 
             newVertices[vOffset + 0] = bezierPoint + controlMeshGameObject.transform.up + controlMeshGameObject.transform.right;
             newVertices[vOffset + 1] = bezierPoint - controlMeshGameObject.transform.up + controlMeshGameObject.transform.right;
