@@ -13,17 +13,15 @@ public class ShipController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        Debug.Log(GetComponent<Renderer>().bounds.extents.y);
         frontOfShip = GetComponent<Renderer>().bounds.extents.y * Vector3.up;
-        bcm = new BezierControlMesh(transform, frontOfShip);
+        bcm = gameObject.AddComponent<BezierControlMesh>();
+        bcm.startPointLocal = frontOfShip;
+        bcm.enabled = true;
     }
 
     void FixedUpdate()
     {
-        if (paused)
-            return;
         Vector3 heading = bcm.GetLocalHeading();
-        Debug.Log(heading);
         //rb.AddForce(transform.up * heading.y, ForceMode.Force);
         //This force here is not relative so we need to convert it to world space
         Vector3 frontOfShipWorld =transform.TransformPoint(frontOfShip); 
@@ -40,32 +38,16 @@ public class ShipController : MonoBehaviour
         // rb.AddForceAtPosition(transform.right * heading.x / 20, frontOfShip(), ForceMode.Force);
     }
 
-
     void LateUpdate()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Game.paused)
         {
-            paused = !paused;
-            if (paused)
-                bcm.Activate();
-            if (!paused)
-                bcm.Deactivate();
+            //  paused = !paused;
+            //  if (paused)
+            //      bcm.Activate();
+            //  if (!paused)
+            //      bcm.Deactivate();
         }
-        if (!paused)
-        {
-            Time.timeScale = 1f; 
-            return; 
-        }
-        Time.timeScale = 0f; 
-        bcm.BuildControlMesh();
     }
-
-    void  OnRenderObject()
-    {    
-        if (!paused)
-            return;
-        bcm.Render();
-    }
-
 
 }

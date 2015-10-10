@@ -3,7 +3,7 @@
 //using System.Collections;
 using System.Collections.Generic;
 
-public class BezierControlMesh
+public class BezierControlMesh : MonoBehaviour
 {
     //The list that holds all the lines
     private List<int> linesList;
@@ -12,25 +12,20 @@ public class BezierControlMesh
     //Game object that is used to help construct the control mesh
     private GameObject controlMeshGameObject;
     //The point form which the mesh starts, this shoudl be in local space of the transform
-    private Vector3 startPointLocal;
-    private Vector3[] newVertices;
-    private float[] distances;
-    private GlLineRenderer lineRenderer;
-    private GameObject curveControl;
-    private GameObject endCube;
-    private Bounds bounds;
-    private Rigidbody rb;
+    public Vector3 startPointLocal;
+    Vector3[] newVertices;
+    float[] distances;
+    GlLineRenderer lineRenderer;
+    GameObject curveControl;
+    GameObject endCube;
+    Bounds bounds;
+    Rigidbody rb;
     //Required to pass back to the ship controller so that it can be manipulated according to the transform
     private Vector3 localHeading;
     delegate void PerformCalculation(int x, int y);
     //The transform of the gameobject that this control mesh is assigned to
-    private Transform transform;
-
-    public BezierControlMesh(Transform transform, Vector3 startPointLocal)
+    void Start()
     {
-        this.transform = transform;
-        this.startPointLocal = startPointLocal;
-
         //Set the initial heading it should be out in front of the object
         localHeading = Vector3.up * 10;
         curveControl = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -48,7 +43,34 @@ public class BezierControlMesh
         lineRenderer = new GlLineRenderer(newMaterial());
     }
 
-    private Material newMaterial()
+    void OnEnable()
+    {
+        Game.OnPaused += OnPaused;
+    }
+                      
+    void OnDisable()
+    {
+        Game.OnPaused += OnPaused;
+    }
+    void OnPaused(bool paused)
+    {
+
+        if (paused)
+        {
+            controlCube.transform.position = transform.TransformPoint(startPointLocal) + transform.TransformDirection(localHeading);
+        }
+        else
+        {
+            linesList = new List<int>();
+        }
+        this.enabled = paused;
+        controlCube.SetActive(paused);
+        curveControl.SetActive(paused);
+        endCube.SetActive(paused);
+        controlMeshGameObject.SetActive(paused);
+    }
+    
+    Material newMaterial()
     {
         Material lineMaterial = new Material("Shader \"Lines/Colored Blended\" {" +
                                     "SubShader { Pass { " +
@@ -67,24 +89,7 @@ public class BezierControlMesh
         return localHeading;
     }
 
-    public void Deactivate()
-    {
-        controlCube.SetActive(false);
-        curveControl.SetActive(false);
-        endCube.SetActive(false);
-        controlMeshGameObject.SetActive(false);
-    }
-
-    public void Activate()
-    {
-        controlCube.transform.position = transform.TransformPoint(startPointLocal) + transform.TransformDirection(localHeading);
-        controlCube.SetActive(true);
-        curveControl.SetActive(true);
-        endCube.SetActive(true);
-        controlMeshGameObject.SetActive(true);
-    }
-
-    public void BuildControlMesh()
+    void LateUpdate()
     {
         //Find the start point of the controller in world space, get the diff between that and
         //ControlCube location and then convert tht to a local direction
@@ -105,10 +110,10 @@ public class BezierControlMesh
          it and the ship, this ensures a smooth curve without kinks
          */
         //Vector3 curveControllPoint = new Vector3(startPointLocal.x, (endPoint.y / 2) + Mathf.Sqrt(Mathf.Pow(endPoint.x - startPoint.x, 2) + Mathf.Pow(endPoint.z - startPoint.z, 2)) / 2, startPoint.z);
-        Vector3 curveControllPointLocal = startPointLocal + (endPointLocal-startPointLocal)/2f;
+        Vector3 curveControllPointLocal = startPointLocal + (endPointLocal - startPointLocal) / 2f;
 
         Vector3 endPoint = transform.TransformPoint(endPointLocal);
-        Vector3 curveControllPoint =  transform.TransformPoint(curveControllPointLocal);
+        Vector3 curveControllPoint = transform.TransformPoint(curveControllPointLocal);
 
 
         curveControl.transform.position = curveControllPoint;
@@ -192,7 +197,7 @@ public class BezierControlMesh
         }
     }
 
-    public void Render()
+    public void OnRenderObject()
     {
         lineRenderer.renderLines(newVertices, linesList.ToArray(), distances);
     }
