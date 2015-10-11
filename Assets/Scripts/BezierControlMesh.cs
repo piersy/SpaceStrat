@@ -3,7 +3,7 @@
 //using System.Collections;
 using System.Collections.Generic;
 
-public class BezierControlMesh : MonoBehaviour
+public class BezierControlMesh : PausableComponent
 {
     //The list that holds all the lines
     private List<int> linesList;
@@ -43,16 +43,7 @@ public class BezierControlMesh : MonoBehaviour
         lineRenderer = new GlLineRenderer(newMaterial());
     }
 
-    void OnEnable()
-    {
-        Game.OnPaused += OnPaused;
-    }
-                      
-    void OnDisable()
-    {
-        Game.OnPaused += OnPaused;
-    }
-    void OnPaused(bool paused)
+    protected override void OnPaused(bool paused)
     {
 
         if (paused)

@@ -8,7 +8,7 @@ public class Game : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        Time.timeScale = 0f;
+//        Time.timeScale = 0f;
     }
 	
     // Update is called once per frame
@@ -17,14 +17,14 @@ public class Game : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             paused = !paused;
-            if (!paused)
-            {
-                Time.timeScale = 1f;
-            }
-            else
-            {
-                Time.timeScale = 0f;
-            }
+//            if (!paused)
+//            {
+//                Time.timeScale = 1f;
+//            }
+//            else
+//            {
+//                Time.timeScale = 0f;
+//            }
             OnPaused(paused);
         }
     }
